@@ -1,0 +1,169 @@
+-- [[ CHII HAUU HUB - PROTECTED & ULTIMATE SMOOTH ]]
+local _O = {
+    ["K"] = {67, 104, 105, 105, 72, 97, 117, 100, 122},
+    ["S"] = 175, -- Tốc độ nhặt lý tưởng
+    ["D"] = 10,
+    ["H"] = "https://sirius.menu/rayfield"
+}
+
+local function _X(t)
+    local s = ""
+    for i = 1, #t do s = s .. string.char(t[i]) end
+    return s
+end
+
+local _G_S = game.GetService
+local _TS = _G_S(game, "TweenService")
+local _RS = _G_S(game, "RunService")
+local _HS = _G_S(game, "HttpService")
+local _TPS = _G_S(game, "TeleportService")
+local _PLRS = _G_S(game, "Players")
+local _LP = _PLRS.LocalPlayer
+
+local Rayfield = loadstring(game:HttpGet(_O["H"]))()
+local _K_V = _X(_O["K"])
+local _A = false
+
+_G.AutoFarmChest = false
+local _CT = nil
+
+-- Chống giật & Khóa trọng lực
+local function _STB()
+    local c = _LP.Character
+    local r = c and c:FindFirstChild("HumanoidRootPart")
+    if r then
+        local bv = r:FindFirstChild("_BV") or Instance.new("BodyVelocity", r)
+        bv.Name = "_BV"
+        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        bv.Velocity = Vector3.new(0, 0, 0)
+        
+        local bg = r:FindFirstChild("_BG") or Instance.new("BodyGyro", r)
+        bg.Name = "_BG"
+        bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bg.P = 15000
+        bg.CFrame = r.CFrame
+    end
+end
+
+-- Tìm rương thông minh (Cải tiến tốc độ)
+local function _GC()
+    local t, d = nil, math.huge
+    local r = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart")
+    if not r then return nil end
+    local c_pos = r.Position
+    
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and (v.Name:find("Chest") or v.Name:find("Box")) then
+            if v:FindFirstChild("TouchInterest") or v.Transparency < 1 then
+                local dist = (v.Position - c_pos).Magnitude
+                if dist < d then
+                    d = dist
+                    t = v
+                end
+            end
+        end
+    end
+    return t
+end
+
+-- Đổi Server (Fix lỗi kẹt Server cũ)
+local function _SH()
+    Rayfield:Notify({Title = "SYSTEM", Content = "Hết rương! Đang nhảy Server mới...", Duration = 4})
+    task.wait(0.5)
+    pcall(function()
+        local r = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+        local s = _HS:JSONDecode(r)
+        for _, v in pairs(s.data) do
+            if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                _TPS:TeleportToPlaceInstance(game.PlaceId, v.id)
+                break
+            end
+        end
+    end)
+end
+
+-- Logic Farm
+function _F()
+    task.spawn(function()
+        while _G.AutoFarmChest do
+            task.wait()
+            pcall(function()
+                local r = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart")
+                if r then
+                    local t = _GC()
+                    if t then
+                        _STB()
+                        local dist = (r.Position - t.Position).Magnitude
+                        if _CT then _CT:Cancel() end
+                        _CT = _TS:Create(r, TweenInfo.new(dist / _O["S"], Enum.EasingStyle.Linear), {CFrame = t.CFrame * CFrame.new(0, 5, 0)})
+                        _CT:Play()
+                        
+                        local timeout = tick()
+                        repeat task.wait() 
+                        until not t.Parent or not _G.AutoFarmChest or (tick() - timeout > 10)
+                    else
+                        if _CT then _CT:Cancel() end
+                        _SH()
+                        _G.AutoFarmChest = false
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+-- Noclip vĩnh viễn
+_RS.Stepped:Connect(function()
+    if _G.AutoFarmChest then
+        pcall(function()
+            for _, v in pairs(_LP.Character:GetDescendants()) do
+                if v:IsA("BasePart") then v.CanCollide = false end
+            end
+            if _LP.Character:FindFirstChildOfClass("Humanoid") then
+                _LP.Character:FindFirstChildOfClass("Humanoid"):ChangeState(11)
+            end
+        end)
+    end
+end)
+
+--- UI ---
+local Window = Rayfield:CreateWindow({
+   Name = "🛡️ Chii Hauu HUB | SECURE FINAL",
+   LoadingTitle = "Đang bảo mật hóa...",
+   LoadingSubtitle = "By Chii Hauu",
+   KeySystem = false
+})
+
+local Tab = Window:CreateTab("💰 Farm Rương")
+
+Tab:CreateInput({
+   Name = "Xác nhận Key",
+   PlaceholderText = "Key: ChiiHaudz",
+   Callback = function(t)
+      if t == _K_V then 
+         _A = true 
+         Rayfield:Notify({Title = "OK", Content = "Xác minh thành công!", Duration = 5})
+      end
+   end,
+})
+
+Tab:CreateToggle({
+   Name = "Auto Chest + Server Hop",
+   CurrentValue = false,
+   Callback = function(v)
+      if _A then
+         _G.AutoFarmChest = v
+         if v then _F() end
+      else
+         Rayfield:Notify({Title = "LỖI", Content = "Vui lòng nhập Key trước!", Duration = 5})
+      end
+   end,
+})
+
+Tab:CreateButton({
+   Name = "🛑 Tắt Script",
+   Callback = function()
+      _G.AutoFarmChest = false
+      Rayfield:Destroy()
+   end,
+})
