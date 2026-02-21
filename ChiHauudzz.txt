@@ -1,64 +1,57 @@
--- [[ CHII HAUU HUB - SECURE & SMOOTH 2026 ]]
--- MÃ HÓA TOÀN BỘ CHUỖI VÀ BIẾN HỆ THỐNG
-local _0x1 = {
-    ["K"] = {67, 104, 105, 105, 72, 97, 117, 100, 122}, -- ChiiHaudz
-    ["S"] = 175,
-    ["H"] = "https://sirius.menu/rayfield",
+-- [[ CHII HAUU HUB - VERSION 6.0 INFINITY SPEED ]]
+local _DATA = {
+    ["K"] = {67, 104, 105, 105, 72, 97, 117, 100, 122}, 
+    ["S"] = 285, -- Tốc độ tối đa an toàn (God Speed)
+    ["U"] = "https://sirius.menu/rayfield",
 }
 
--- Giải mã Key nội bộ (Không hiển thị ra ngoài)
-local function _GET_KEY(t)
+local function _DE(t)
     local k = ""
     for i = 1, #t do k = k .. string.char(t[i]) end
     return k
 end
 
-local _S = _0x1["S"]
-local _K = _GET_KEY(_0x1["K"])
-local _A = false
+local _S, _K = _DATA["S"], _DE(_DATA["K"])
 local _G_S = game.GetService
 local _TS, _RS, _HS, _TPS = _G_S(game, "TweenService"), _G_S(game, "RunService"), _G_S(game, "HttpService"), _G_S(game, "TeleportService")
 local _LP = _G_S(game, "Players").LocalPlayer
+local _A = false
 
-local Rayfield = loadstring(game:HttpGet(_0x1["H"]))()
+local Rayfield = loadstring(game:HttpGet(_DATA["U"]))()
 _G.AutoFarmChest = false
 local _CT = nil
 
--- HÀM FIX GIẬT: Đồng bộ hóa vật lý tuyệt đối
-local function _STB()
-    local c = _LP.Character
-    local r = c and c:FindFirstChild("HumanoidRootPart")
-    if r then
-        local bv = r:FindFirstChild("_CH_BV") or Instance.new("BodyVelocity", r)
-        bv.Name = "_CH_BV"
-        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+-- FIX GIẬT & KHÓA VẬT LÝ TUYỆT ĐỐI
+local function _LOCK(r)
+    if not r:FindFirstChild("_INFINITY_V") then
+        local bv = Instance.new("BodyVelocity", r)
+        bv.Name = "_INFINITY_V"
+        bv.MaxForce = Vector3.new(1e10, 1e10, 1e10)
         bv.Velocity = Vector3.new(0, 0, 0)
         
-        local bg = r:FindFirstChild("_CH_BG") or Instance.new("BodyGyro", r)
-        bg.Name = "_CH_BG"
-        bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-        bg.P = 20000 -- Tăng độ cứng để không bị lắc camera
+        local bg = Instance.new("BodyGyro", r)
+        bg.Name = "_INFINITY_G"
+        bg.MaxTorque = Vector3.new(1e10, 1e10, 1e10)
+        bg.P = 100000 -- Cứng gấp đôi bản cũ
         bg.CFrame = r.CFrame
+    end
+    if _LP.Character:FindFirstChild("Humanoid") then
+        _LP.Character.Humanoid.PlatformStand = true
     end
 end
 
--- QUÉT RƯƠNG THÔNG MINH + TỰ ĐỔI MAP (MAP HOP)
-local function _GET_C()
+-- TÌM RƯƠNG SIÊU TỐC (KHÔNG LAG)
+local function _SCAN()
     local t, d = nil, math.huge
     local r = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart")
     if not r then return nil end
 
-    -- Ưu tiên quét các vật thể chứa "Chest" trong tên ở Workspace
-    local descendants = workspace:GetDescendants()
-    for i = 1, #descendants do
-        local v = descendants[i]
-        if v:IsA("BasePart") and v.Name:lower():find("chest") then
-            -- Kiểm tra rương chưa bị mở (TouchInterest hoặc Transparency)
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and v.Name:find("Chest") then
             if v:FindFirstChild("TouchInterest") or v.Transparency < 1 then
                 local dist = (v.Position - r.Position).Magnitude
                 if dist < d then
-                    d = dist
-                    t = v
+                    d = dist; t = v
                 end
             end
         end
@@ -66,110 +59,103 @@ local function _GET_C()
     return t
 end
 
--- SERVER HOP THÔNG MINH (KHI HẾT RƯƠNG)
-local function _SERVER_HOP()
-    Rayfield:Notify({Title = "THÔNG BÁO", Content = "Hết rương! Đang đổi Server mới...", Duration = 3})
-    task.wait(1)
+-- SERVER HOP TỨC THÌ
+local function _QUICK_HOP()
     pcall(function()
-        local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
-        local servers = _HS:JSONDecode(game:HttpGet(url))
-        for _, s in pairs(servers.data) do
-            if s.playing < s.maxPlayers and s.id ~= game.JobId then
-                _TPS:TeleportToPlaceInstance(game.PlaceId, s.id)
+        local r = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
+        local s = _HS:JSONDecode(r).data
+        for _, v in pairs(s) do
+            if v.playing < v.maxPlayers and v.id ~= game.JobId then
+                _TPS:TeleportToPlaceInstance(game.PlaceId, v.id)
                 break
             end
         end
     end)
 end
 
--- LOGIC FARM LIÊN TỤC
-function _START_F()
+-- LOGIC NHẶT LIÊN TỤC KHÔNG DỪNG (PRE-ACTION)
+function _INFINITY_FARM()
     task.spawn(function()
         while _G.AutoFarmChest do
-            task.wait()
-            pcall(function()
-                local r = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart")
-                if r then
-                    local target = _GET_C()
-                    if target then
-                        _STB()
-                        local dist = (r.Position - target.Position).Magnitude
-                        -- Tween mượt không gia tốc (Linear)
-                        if _CT then _CT:Cancel() end
-                        _CT = _TS:Create(r, TweenInfo.new(dist / _S, Enum.EasingStyle.Linear), {CFrame = target.CFrame * CFrame.new(0, 4, 0)})
-                        _CT:Play()
-                        
-                        -- Chờ nhặt xong rương (Timeout 8s tránh kẹt)
-                        local start = tick()
-                        repeat task.wait() 
-                        until not target.Parent or not _G.AutoFarmChest or (tick() - start > 8)
-                    else
-                        -- Hết rương -> Tắt Farm và Hop
-                        if _CT then _CT:Cancel() end
-                        _G.AutoFarmChest = false
-                        _SERVER_HOP()
+            _RS.Heartbeat:Wait() -- Chạy theo tốc độ khung hình server
+            local r = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart")
+            if r then
+                local chest = _SCAN()
+                if chest then
+                    _LOCK(r)
+                    local dist = (r.Position - chest.Position).Magnitude
+                    
+                    if _CT then _CT:Cancel() end
+                    _CT = _TS:Create(r, TweenInfo.new(dist / _S, Enum.EasingStyle.Linear), {CFrame = chest.CFrame})
+                    _CT:Play()
+                    
+                    -- Cơ chế nhảy rương ngay khi gần chạm (Fix đứng 1 giây)
+                    while chest.Parent and _G.AutoFarmChest and (r.Position - chest.Position).Magnitude > 4 do
+                        _RS.Heartbeat:Wait()
                     end
+                else
+                    if _CT then _CT:Cancel() end
+                    _QUICK_HOP()
+                    _G.AutoFarmChest = false
+                    break
                 end
-            end)
+            end
         end
     end)
 end
 
--- NOCLIP + AIR STATE (CHỐNG GIẬT KHI VA CHẠM)
+-- NOCLIP KHÔNG LỖI
 _RS.Stepped:Connect(function()
-    if _G.AutoFarmChest then
-        pcall(function()
-            local char = _LP.Character
-            if char then
-                for _, v in pairs(char:GetDescendants()) do
-                    if v:IsA("BasePart") then v.CanCollide = false end
-                end
-                if char:FindFirstChildOfClass("Humanoid") then
-                    char:FindFirstChildOfClass("Humanoid"):ChangeState(11)
-                end
-            end
-        end)
+    if _G.AutoFarmChest and _LP.Character then
+        for _, v in pairs(_LP.Character:GetDescendants()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+        local h = _LP.Character:FindFirstChild("Humanoid")
+        if h then h:ChangeState(11) end
     end
 end)
 
---- GIAO DIỆN RAYFIELD ---
+--- UI ---
 local Window = Rayfield:CreateWindow({
-   Name = "🏴‍☠️ Chii Hauu HUB | V3 FINAL",
-   LoadingTitle = "Bảo Mật Hệ Thống...",
+   Name = "🛡️ Chii Hauu HUB | V6 INFINITY",
+   LoadingTitle = "Infinity Physics Loading...",
    LoadingSubtitle = "By Chii Hauu",
    KeySystem = false
 })
 
-local Tab = Window:CreateTab("💰 Farm Rương")
+local Tab = Window:CreateTab("💰 Farm")
 
 Tab:CreateInput({
-   Name = "Nhập Key",
-   PlaceholderText = "Key: ChiiHaudz",
+   Name = "Xác nhận mã bảo mật",
+   PlaceholderText = "Nhập mã...",
    Callback = function(t)
       if t == _K then 
          _A = true 
-         Rayfield:Notify({Title = "OK", Content = "Mật mã đúng! Chúc bạn farm vui vẻ.", Duration = 5})
+         Rayfield:Notify({Title = "SUCCESS", Content = "Đã mở khóa tốc độ vô hạn!", Duration = 3})
       end
    end,
 })
 
 Tab:CreateToggle({
-   Name = "Auto Farm + Server Hop",
+   Name = "Auto Collect Infinity (No Stop)",
    CurrentValue = false,
    Callback = function(v)
       if _A then
          _G.AutoFarmChest = v
-         if v then _START_F() end
+         if v then _INFINITY_FARM() end
       else
-         Rayfield:Notify({Title = "LỖI", Content = "Vui lòng nhập Key trước!", Duration = 5})
+         Rayfield:Notify({Title = "ERROR", Content = "Nhập Key để tiếp tục!", Duration = 3})
       end
    end,
 })
 
 Tab:CreateButton({
-   Name = "🛑 Hủy Script",
+   Name = "🛑 Stop & Clean",
    Callback = function()
       _G.AutoFarmChest = false
+      if _LP.Character and _LP.Character:FindFirstChild("Humanoid") then
+          _LP.Character.Humanoid.PlatformStand = false
+      end
       Rayfield:Destroy()
    end,
 })
