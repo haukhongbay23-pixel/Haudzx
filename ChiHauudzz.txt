@@ -1,7 +1,7 @@
--- [[ CHII HAUU HUB - VERSION 6.0 INFINITY SPEED ]]
+-- [[ CHII HAUU HUB - VERSION 8.0 GOD MODE ]]
 local _DATA = {
-    ["K"] = {67, 104, 105, 105, 72, 97, 117, 100, 122}, 
-    ["S"] = 285, -- Tốc độ tối đa an toàn (God Speed)
+    ["K"] = {67, 104, 105, 105, 72, 97, 117, 100, 122}, -- ChiiHaudz
+    ["S"] = 285, 
     ["U"] = "https://sirius.menu/rayfield",
 }
 
@@ -21,7 +21,40 @@ local Rayfield = loadstring(game:HttpGet(_DATA["U"]))()
 _G.AutoFarmChest = false
 local _CT = nil
 
--- FIX GIẬT & KHÓA VẬT LÝ TUYỆT ĐỐI
+-- HÀM DỌN DẸP HOÀN TOÀN (FIX LỖI KHÔNG DI CHUYỂN ĐƯỢC)
+local function _CLEAN_UP()
+    local c = _LP.Character
+    local r = c and c:FindFirstChild("HumanoidRootPart")
+    if r then
+        if r:FindFirstChild("_INFINITY_V") then r._INFINITY_V:Destroy() end
+        if r:FindFirstChild("_INFINITY_G") then r._INFINITY_G:Destroy() end
+    end
+    if c and c:FindFirstChild("Humanoid") then
+        c.Humanoid.PlatformStand = false
+        c.Humanoid:ChangeState(11) -- Reset state
+        task.wait(0.1)
+        c.Humanoid:ChangeState(8) -- Đưa về trạng thái Running
+    end
+    if _CT then _CT:Cancel() end
+end
+
+-- KIỂM TRA VẬT PHẨM QUÝ (KEY / CHÉN THÁNH)
+local function _CHECK_RARE()
+    local inv = _LP.Backpack:GetChildren()
+    local char = _LP.Character:GetChildren()
+    local all = {}
+    for _, v in pairs(inv) do table.insert(all, v.Name:lower()) end
+    for _, v in pairs(char) do table.insert(all, v.Name:lower()) end
+    
+    for _, name in pairs(all) do
+        if name:find("key") or name:find("cup") or name:find("chalice") or name:find("holy") then
+            return true
+        end
+    end
+    return false
+end
+
+-- KHÓA VẬT LÝ KHI BAY
 local function _LOCK(r)
     if not r:FindFirstChild("_INFINITY_V") then
         local bv = Instance.new("BodyVelocity", r)
@@ -32,7 +65,7 @@ local function _LOCK(r)
         local bg = Instance.new("BodyGyro", r)
         bg.Name = "_INFINITY_G"
         bg.MaxTorque = Vector3.new(1e10, 1e10, 1e10)
-        bg.P = 100000 -- Cứng gấp đôi bản cũ
+        bg.P = 100000
         bg.CFrame = r.CFrame
     end
     if _LP.Character:FindFirstChild("Humanoid") then
@@ -40,19 +73,17 @@ local function _LOCK(r)
     end
 end
 
--- TÌM RƯƠNG SIÊU TỐC (KHÔNG LAG)
+-- TÌM RƯƠNG SIÊU TỐC
 local function _SCAN()
     local t, d = nil, math.huge
     local r = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart")
     if not r then return nil end
 
     for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("BasePart") and v.Name:find("Chest") then
+        if v:IsA("BasePart") and (v.Name:find("Chest") or v.Name:find("Box")) then
             if v:FindFirstChild("TouchInterest") or v.Transparency < 1 then
                 local dist = (v.Position - r.Position).Magnitude
-                if dist < d then
-                    d = dist; t = v
-                end
+                if dist < d then d = dist; t = v end
             end
         end
     end
@@ -73,38 +104,48 @@ local function _QUICK_HOP()
     end)
 end
 
--- LOGIC NHẶT LIÊN TỤC KHÔNG DỪNG (PRE-ACTION)
+-- LOGIC FARM KHÔNG DỪNG VÀ TỰ DỪNG KHI CÓ ITEM QUÝ
 function _INFINITY_FARM()
     task.spawn(function()
         while _G.AutoFarmChest do
-            _RS.Heartbeat:Wait() -- Chạy theo tốc độ khung hình server
+            _RS.Heartbeat:Wait()
+            
+            -- KIỂM TRA ITEM QUÝ TRƯỚC MỖI LẦN NHẶT
+            if _CHECK_RARE() then
+                _G.AutoFarmChest = false
+                _CLEAN_UP()
+                Rayfield:Notify({Title = "⚠️ CẢNH BÁO", Content = "Đã nhặt được vật phẩm quý! Tự động dừng để bảo vệ.", Duration = 10})
+                break
+            end
+
             local r = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart")
             if r then
                 local chest = _SCAN()
                 if chest then
                     _LOCK(r)
                     local dist = (r.Position - chest.Position).Magnitude
-                    
                     if _CT then _CT:Cancel() end
                     _CT = _TS:Create(r, TweenInfo.new(dist / _S, Enum.EasingStyle.Linear), {CFrame = chest.CFrame})
                     _CT:Play()
                     
-                    -- Cơ chế nhảy rương ngay khi gần chạm (Fix đứng 1 giây)
-                    while chest.Parent and _G.AutoFarmChest and (r.Position - chest.Position).Magnitude > 4 do
+                    while chest.Parent and _G.AutoFarmChest and (r.Position - chest.Position).Magnitude > 5 do
                         _RS.Heartbeat:Wait()
+                        if _CHECK_RARE() then break end -- Kiểm tra tức thì khi đang bay
                     end
                 else
-                    if _CT then _CT:Cancel() end
+                    _CLEAN_UP()
                     _QUICK_HOP()
-                    _G.AutoFarmChest = false
                     break
                 end
+            else
+                task.wait(1)
             end
         end
+        _CLEAN_UP()
     end)
 end
 
--- NOCLIP KHÔNG LỖI
+-- NOCLIP SIÊU MƯỢT
 _RS.Stepped:Connect(function()
     if _G.AutoFarmChest and _LP.Character then
         for _, v in pairs(_LP.Character:GetDescendants()) do
@@ -115,10 +156,10 @@ _RS.Stepped:Connect(function()
     end
 end)
 
---- UI ---
+--- GIAO DIỆN ---
 local Window = Rayfield:CreateWindow({
-   Name = "🛡️ Chii Hauu HUB | V6 INFINITY",
-   LoadingTitle = "Infinity Physics Loading...",
+   Name = "🛡️ Chii Hauu HUB | V8 GOD MODE",
+   LoadingTitle = "Ultimate Protection System",
    LoadingSubtitle = "By Chii Hauu",
    KeySystem = false
 })
@@ -126,25 +167,25 @@ local Window = Rayfield:CreateWindow({
 local Tab = Window:CreateTab("💰 Farm")
 
 Tab:CreateInput({
-   Name = "Xác nhận mã bảo mật",
+   Name = "Mã xác nhận",
    PlaceholderText = "Nhập mã...",
    Callback = function(t)
       if t == _K then 
          _A = true 
-         Rayfield:Notify({Title = "SUCCESS", Content = "Đã mở khóa tốc độ vô hạn!", Duration = 3})
+         Rayfield:Notify({Title = "OK", Content = "Xác minh thành công!", Duration = 3})
       end
    end,
 })
 
 Tab:CreateToggle({
-   Name = "Auto Collect Infinity (No Stop)",
+   Name = "Auto Collect Infinity (Stop at Rare)",
    CurrentValue = false,
    Callback = function(v)
       if _A then
          _G.AutoFarmChest = v
-         if v then _INFINITY_FARM() end
+         if v then _INFINITY_FARM() else _CLEAN_UP() end
       else
-         Rayfield:Notify({Title = "ERROR", Content = "Nhập Key để tiếp tục!", Duration = 3})
+         Rayfield:Notify({Title = "LỖI", Content = "Vui lòng nhập mã!", Duration = 3})
       end
    end,
 })
@@ -153,9 +194,7 @@ Tab:CreateButton({
    Name = "🛑 Stop & Clean",
    Callback = function()
       _G.AutoFarmChest = false
-      if _LP.Character and _LP.Character:FindFirstChild("Humanoid") then
-          _LP.Character.Humanoid.PlatformStand = false
-      end
+      _CLEAN_UP()
       Rayfield:Destroy()
    end,
 })
